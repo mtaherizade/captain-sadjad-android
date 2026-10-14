@@ -1,0 +1,85 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install required Android SDK components
+        run: |
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          echo "Android SDK at: $SDK"
+          ls "$SDK/platforms" 2>/dev/null || true
+          SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          if [ -x "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+            "$SDKMANAGER" "platforms;android-34" "build-tools;34.0.0" >/dev/null 2>&1 || true
+          else
+            echo "sdkmanager not found at $SDKMANAGER - relying on the preinstalled SDK"
+          fi
+          echo "platforms: $(ls "$SDK/platforms" 2>/dev/null | tr '\n' ' ')"
+
+      - name: Generate release keystore
+        run: |
+          keytool -genkeypair -v \
+            -keystore release.keystore \
+            -alias captainsadjad \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass captainsadjad2024 \
+            -keypass captainsadjad2024 \
+            -dname "CN=Captain Sadjad, OU=Games, O=CaptainSadjad, L=Melbourne, ST=VIC, C=AU"
+          printf 'storeFile=release.keystore\nstorePassword=captainsadjad2024\nkeyAlias=captainsadjad\nkeyPassword=captainsadjad2024\n' > keystore.properties
+          ls -l release.keystore keystore.properties
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Verify game files are present
+        run: |
+          echo "--- assets/www ---"
+          ls -la app/src/main/assets/www/ | head -40
+          test -f app/src/main/assets/www/index.html \
+            && echo "index.html found" \
+            || { echo "ERROR: app/src/main/assets/www/index.html is missing"; exit 1; }
+
+      - name: Build debug and release APKs
+        run: ./gradlew --no-daemon --stacktrace assembleDebug assembleRelease
+
+      - name: Show generated APKs
+        run: find app/build/outputs/apk -name "*.apk" -exec ls -lh {} \;
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: CaptainSadjad-APK
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Upload signing keystore
+        uses: actions/upload-artifact@v4
+        with:
+          name: CaptainSadjad-keystore
+          path: release.keystore
+          if-no-files-found: error

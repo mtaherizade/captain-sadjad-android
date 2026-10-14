@@ -1,0 +1,14 @@
+# Normalise line endings inside the repository so the Linux CI build is safe.
+* text=auto eol=lf
+
+# The Gradle wrapper shell script MUST stay LF, otherwise bash on the Linux
+# runner fails with "bad interpreter: /bin/sh^M".
+gradlew text eol=lf
+gradlew.bat text eol=crlf
+
+# Binary files - never touch these
+*.jar binary
+*.png binary
+*.apk binary
+*.keystore binary
+*.jks binary

@@ -1,0 +1,22 @@
+# Build output
+build/
+app/build/
+.gradle/
+local.properties
+*.iml
+.idea/
+captures/
+
+# Signing material (never commit real keys)
+keystore.properties
+*.keystore
+*.jks
+release.keystore
+
+# PlayCanvas build downloads
+*.zip
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini

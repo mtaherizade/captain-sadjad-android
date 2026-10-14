@@ -30,7 +30,7 @@
 │       ├── AndroidManifest.xml
 │       ├── java/com/captainsadjad/game/MainActivity.java   ← WebView تمام‌صفحه
 │       ├── res/                      ← آیکن، نام برنامه، تم
-│       └── assets/www/               ← ★ فایل‌های بازی اینجا می‌روند (index.html + assets)
+│       └── assets/www/               ← ★ خروجی وب بازی (۷۷ فایل، ~۳۰۶ مگابایت)
 ├── build.gradle / settings.gradle / gradle.properties
 ├── gradlew / gradlew.bat / gradle/wrapper/
 └── tools/make_icon.py                ← ساخت مجدد آیکن برنامه
@@ -67,8 +67,12 @@
 3. فایل‌های قبلی داخل `assets/www/` را پاک کن (به‌جز خود پوشه).
 4. Commit و Push کن؛ ساخت خودکار شروع می‌شود.
 
-> صفحهٔ فعلی `assets/www/index.html` فقط یک **placeholder** است تا مطمئن شویم Build
-> درست کار می‌کند. با فایل‌های واقعی بازی جایگزینش کن.
+> ⚠️ **مهم — اسم فایل‌های غیرانگلیسی:** ابزار `aapt2` اندروید روی مسیرهای
+> غیر-ASCII خطا می‌دهد (خطای مستندشدهٔ APT2265). در این بازی یک asset با اسم
+> فارسی وجود داشت که به `pilot_sajad_hq.bin` تغییر نام داده شد و آدرسش در
+> `config.json` هم اصلاح شد (MD5 فایل دست‌نخورده ماند). اگر دوباره از PlayCanvas
+> خروجی گرفتی و اسم فارسی برگشت، باید همین کار تکرار شود — وگرنه build ممکن است
+> بشکند یا آن مدل در بازی لود نشود.
 
 ---
 

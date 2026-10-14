@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -35,7 +35,7 @@ jobs:
             yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
             "$SDKMANAGER" "platforms;android-34" "build-tools;34.0.0" >/dev/null 2>&1 || true
           else
-            echo "sdkmanager not found at $SDKMANAGER - relying on the preinstalled SDK"
+            echo "sdkmanager not found - relying on the preinstalled SDK"
           fi
           echo "platforms: $(ls "$SDK/platforms" 2>/dev/null | tr '\n' ' ')"
 
@@ -56,11 +56,16 @@ jobs:
 
       - name: Verify game files are present
         run: |
-          echo "--- assets/www ---"
-          ls -la app/src/main/assets/www/ | head -40
+          echo "--- assets/www (first 20) ---"
+          ls app/src/main/assets/www/ | head -20
           test -f app/src/main/assets/www/index.html \
             && echo "index.html found" \
             || { echo "ERROR: app/src/main/assets/www/index.html is missing"; exit 1; }
+          echo "--- non-ASCII asset path check (aapt2 cannot handle these) ---"
+          if find app/src/main/assets/www -path '*[! -~]*' -print -quit | grep -q .; then
+            echo "ERROR: non-ASCII path found under assets/www:"; find app/src/main/assets/www -path '*[! -~]*'; exit 1
+          fi
+          echo "all asset paths are ASCII"
 
       - name: Build debug and release APKs
         run: ./gradlew --no-daemon --stacktrace assembleDebug assembleRelease
@@ -68,7 +73,7 @@ jobs:
       - name: Show generated APKs
         run: find app/build/outputs/apk -name "*.apk" -exec ls -lh {} \;
 
-      - name: Upload APKs
+      - name: Upload APKs as workflow artifacts
         uses: actions/upload-artifact@v4
         with:
           name: CaptainSadjad-APK
@@ -76,10 +81,27 @@ jobs:
             app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+          retention-days: 7
 
-      - name: Upload signing keystore
-        uses: actions/upload-artifact@v4
-        with:
-          name: CaptainSadjad-keystore
-          path: release.keystore
-          if-no-files-found: error
+      - name: Publish APKs on a GitHub Release (direct download link)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          ASSETS="app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/debug/app-debug.apk release.keystore"
+          if gh release view apk-latest >/dev/null 2>&1; then
+            echo "updating existing release 'apk-latest'"
+            gh release upload apk-latest $ASSETS --clobber
+          else
+            echo "creating release 'apk-latest'"
+            gh release create apk-latest $ASSETS \
+              --title "Captain Sadjad - Android APK" \
+              --notes "Automated Android build from the PlayCanvas game export.
+
+          * \`app-release.apk\` - signed, install this one
+          * \`app-debug.apk\` - debug variant (separate package, can be installed alongside)
+          * \`release.keystore\` - signing key, keep it if you ever publish updates
+
+          Build run #${{ github.run_number }} from commit ${{ github.sha }}."
+          fi
+          gh release view apk-latest --json assets --jq '.assets[] | "\(.name)  \(.size) bytes  \(.browser_download_url)"'

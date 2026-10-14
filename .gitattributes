@@ -6,9 +6,53 @@
 gradlew text eol=lf
 gradlew.bat text eol=crlf
 
-# Binary files - never touch these
-*.jar binary
-*.png binary
-*.apk binary
+# ---------------------------------------------------------------------------
+# Binary assets: never apply ANY end-of-line conversion.
+# This is critical - a single CRLF->LF rewrite corrupts a .bin/.glb mesh.
+# ---------------------------------------------------------------------------
+*.bin     binary
+*.glb     binary
+*.gltf    binary
+*.fbx     binary
+*.obj     binary
+*.mtl     binary
+*.drc     binary
+*.basis   binary
+*.ktx     binary
+*.ktx2    binary
+*.dds     binary
+*.hdr     binary
+*.exr     binary
+
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.webp    binary
+*.ico     binary
+*.bmp     binary
+*.tga     binary
+
+*.ttf     binary
+*.otf     binary
+*.woff    binary
+*.woff2   binary
+
+*.mp3     binary
+*.ogg     binary
+*.wav     binary
+*.m4a     binary
+*.mp4     binary
+*.webm    binary
+*.opus    binary
+
+*.wasm    binary
+*.data    binary
+*.mem     binary
+
+*.jar     binary
+*.apk     binary
+*.aab     binary
+*.zip     binary
 *.keystore binary
-*.jks binary
+*.jks     binary

@@ -13,7 +13,9 @@ keystore.properties
 *.jks
 release.keystore
 
-# PlayCanvas build downloads
+# PlayCanvas raw download - the game itself is committed under
+# app/src/main/assets/www/ so we must not commit a second 300 MB copy.
+AirplaneGame/
 *.zip
 
 # OS noise
